@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Add html2canvas and FileSaver.js libraries -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <!-- Add SVG.js for vector graphics -->
+    <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0.16/dist/svg.min.js"></script>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .tab-container {
+            width: 100%;
+            margin: 0;
+        }
+        
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+            display: flex;
+            justify-content: center;
+            margin: 0;
+        }
+        
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 10px 20px;
+            transition: 0.3s;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 14px;
+        }
+        
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        
+        .tab button.active {
+            background-color: #ccc;
+        }
+        
+        .tabcontent {
+            display: none;
+            padding: 0;
+            border: 1px solid #ccc;
+            border-top: none;
+        }
+        
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 5px;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+        }
+        
+        .model-container {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 30px;
+            width: 100%;
+        }
+        
+        .title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+        
+        .config-container {
+            text-align: center;
+            position: relative;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Side view styles */
+        .grid-2d-side, .grid-brugge-side {
+            display: inline-block;
+            position: relative;
+            border: 1px solid #555;
+            margin: 0;
+        }
+        
+        .grid-2d-side {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .grid-brugge-side {
+            width: 400px;
+            height: 220px;
+        }
+        
+        /* Top view styles */
+        .grid-2d-top, .grid-brugge-top {
+            display: inline-block;
+            position: relative;
+            border: 1px solid #555;
+            background-color: #e6e6e6; /* Changed to gray */
+            margin: 0;
+        }
+        
+        .grid-2d-top {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .grid-brugge-top {
+            width: 400px;
+            height: 220px;
+        }
+        
+        .surface-layer {
+            position: absolute;
+            width: 100%;
+            height: 20%;
+            top: 0;
+            background-color: #d4e6f1;
+            border-bottom: 1px dashed #3a7ca5;
+        }
+        
+        .middle-layer {
+            position: absolute;
+            width: 100%;
+            height: 60%;
+            top: 20%;
+            background-color: #d5dbdb;
+            border-bottom: 1px dashed #7f8c8d;
+        }
+        
+        .reservoir-layer {
+            position: absolute;
+            width: 100%;
+            height: 20%;
+            bottom: 0;
+            background-color: #fdebd0;
+        }
+        
+        .surface-label {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            color: #3a7ca5;
+            font-size: 12px;
+        }
+        
+        .reservoir-label {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            color: #a55a3a;
+            font-size: 12px;
+        }
+        
+        .point {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 15;
+        }
+        
+        .point-info {
+            position: absolute;
+            font-size: 10px;
+            color: #333;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 1px 3px;
+            border-radius: 2px;
+            transform: translate(-50%, -50%);
+            z-index: 25;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        
+        .well {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: black;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        
+        .well-line {
+            position: absolute;
+            width: 2px;
+            background-color: black;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-point {
+            width: 8px;
+            height: 8px;
+            background-color: red;
+            border-radius: 50%;
+        }
+        
+        .legend-well {
+            width: 10px;
+            height: 10px;
+            background-color: black;
+            border-radius: 50%;
+        }
+        
+        .legend-line {
+            width: 2px;
+            height: 15px;
+            background-color: black;
+            margin-left: 4px;
+        }
+        
+        .config-title {
+            font-size: 16px;
+            margin: 0 0 5px 0;
+            font-weight: bold;
+        }
+        
+        .download-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        button.download-btn {
+            padding: 8px 12px;
+            background-color: #4a7ba7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        button.download-btn:hover {
+            background-color: #3a6a96;
+        }
+        
+        /* Scale bars and dimension info */
+        .scale-bar {
+            position: absolute;
+            height: 2px;
+            background-color: black;
+            bottom: 15px;
+            right: 15px;
+        }
+        
+        .scale-label {
+            position: absolute;
+            font-size: 12px;
+            color: black;
+            bottom: 1px;
+            right: 15px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        
+        .depth-marker {
+            position: absolute;
+            right: 5px;
+            color: black;
+            font-size: 12px;
+        }
+        
+        .grid-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #444;
+            font-size: 11px;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 2px 5px;
+            border-radius: 3px;
+            text-align: right;
+            z-index: 20;
+        }
+        
+        /* Side view specific grid-info positioning */
+        .side-view-info {
+            right: 40px; /* Move more toward center */
+        }
+        
+        /* Remove figure subtitles */
+        #capture-side, #capture-top {
+            display: inline-block;
+            position: relative;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="tab-container">
+        <div class="tab">
+            <button class="tablinks" onclick="openView(event, 'SideView')" id="defaultOpen">Side View</button>
+            <button class="tablinks" onclick="openView(event, 'TopView')">Top View</button>
+        </div>
+        
+        <div id="SideView" class="tabcontent">
+            <div id="capture-side">
+                <div class="model-container">
+                    <div class="title">2D Conceptual Model Monitoring Configurations</div>
+                    <div class="container">
+                        <div class="config-container">
+                            <div class="config-title">Linear Array</div>
+                            <div class="grid-2d-side" id="linear-2d-side">
+                                <div class="surface-layer"></div>
+                                <div class="middle-layer"></div>
+                                <div class="reservoir-layer"></div>
+                                <div class="surface-label">Surface</div>
+                                <div class="reservoir-label">Reservoir</div>
+                                <div class="grid-info side-view-info">51 points</div>
+                                <!-- Depth markers will be added by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <div class="config-container">
+                            <div class="config-title">Low-Density Grid</div>
+                            <div class="grid-2d-side" id="low-density-2d-side">
+                                <div class="surface-layer"></div>
+                                <div class="middle-layer"></div>
+                                <div class="reservoir-layer"></div>
+                                <div class="surface-label">Surface</div>
+                                <div class="reservoir-label">Reservoir</div>
+                                <div class="grid-info side-view-info">36 points<br>~800 m spacing</div>
+                                <!-- Depth markers will be added by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <div class="config-container">
+                            <div class="config-title">High-Density Grid</div>
+                            <div class="grid-2d-side" id="high-density-2d-side">
+                                <div class="surface-layer"></div>
+                                <div class="middle-layer"></div>
+                                <div class="reservoir-layer"></div>
+                                <div class="surface-label">Surface</div>
+                                <div class="reservoir-label">Reservoir</div>
+                                <div class="grid-info side-view-info">121 points<br>~400 m spacing</div>
+                                <!-- Depth markers will be added by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="model-container">
+                    <div class="title">Brugge Model Monitoring Configurations</div>
+                    <div class="container">
+                        <div class="config-container">
+                            <div class="config-title">Linear Array</div>
+                            <div class="grid-brugge-side" id="linear-brugge-side">
+                                <div class="surface-layer"></div>
+                                <div class="middle-layer"></div>
+                                <div class="reservoir-layer"></div>
+                                <div class="surface-label">Surface</div>
+                                <div class="reservoir-label">Reservoir</div>
+                                <div class="grid-info side-view-info">139 points</div>
+                                <!-- Depth markers will be added by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <div class="config-container">
+                            <div class="config-title">Low-Density Grid</div>
+                            <div class="grid-brugge-side" id="low-density-brugge-side">
+                                <div class="surface-layer"></div>
+                                <div class="middle-layer"></div>
+                                <div class="reservoir-layer"></div>
+                                <div class="surface-label">Surface</div>
+                                <div class="reservoir-label">Reservoir</div>
+                                <div class="grid-info side-view-info">36 points<br>~2.8 km spacing</div>
+                                <!-- Depth markers will be added by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <div class="config-container">
+                            <div class="config-title">High-Density Grid</div>
+                            <div class="grid-brugge-side" id="high-density-brugge-side">
+                                <div class="surface-layer"></div>
+                                <div class="middle-layer"></div>
+                                <div class="reservoir-layer"></div>
+                                <div class="surface-label">Surface</div>
+                                <div class="reservoir-label">Reservoir</div>
+                                <div class="grid-info side-view-info">121 points<br>~1.5 km spacing</div>
+                                <!-- Depth markers will be added by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-point"></div>
+                        <div>Monitoring Point</div>
+                    </div>
+                    <div class="legend-item">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="legend-well"></div>
+                            <div class="legend-line"></div>
+                        </div>
+                        <div>Injection Well</div>
+                    </div>
+                </div>
+            </div>
+            <div class="download-container">
+                <button class="download-btn" id="download-side">Download Side View as PNG</button>
+                <button class="download-btn" id="download-side-svg">Download as SVG (Vector)</button>
+            </div>
+        </div>
+        
+        <div id="TopView" class="tabcontent">
+            <div id="capture-top">
+                <div class="model-container">
+                    <div class="title">2D Conceptual Model Monitoring Configurations</div>
+                    <div class="container">
+                        <div class="config-container">
+                            <div class="config-title">Linear Array</div>
+                            <div class="grid-2d-top" id="linear-2d-top"></div>
+                        </div>
+                        
+                        <div class="config-container">
+                            <div class="config-title">Low-Density Grid</div>
+                            <div class="grid-2d-top" id="low-density-2d-top"></div>
+                        </div>
+                        
+                        <div class="config-container">
+                            <div class="config-title">High-Density Grid</div>
+                            <div class="grid-2d-top" id="high-density-2d-top"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="model-container">
+                    <div class="title">Brugge Model Monitoring Configurations</div>
+                    <div class="container">
+                        <div class="config-container">
+                            <div class="config-title">Linear Array</div>
+                            <div class="grid-brugge-top" id="linear-brugge-top"></div>
+                        </div>
+                        
+                        <div class="config-container">
+                            <div class="config-title">Low-Density Grid</div>
+                            <div class="grid-brugge-top" id="low-density-brugge-top"></div>
+                        </div>
+                        
+                        <div class="config-container">
+                            <div class="config-title">High-Density Grid</div>
+                            <div class="grid-brugge-top" id="high-density-brugge-top"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-point"></div>
+                        <div>Monitoring Point</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-well"></div>
+                        <div>Injection Well</div>
+                    </div>
+                </div>
+            </div>
+            <div class="download-container">
+                <button class="download-btn" id="download-top">Download Top View as PNG</button>
+                <button class="download-btn" id="download-top-svg">Download as SVG (Vector)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab functionality
+        function openView(evt, viewName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(viewName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+        
+        // Side view setup
+        function setupSideView() {
+            // 2D model side view
+            const grids2DSide = [
+                document.getElementById('linear-2d-side'),
+                document.getElementById('low-density-2d-side'),
+                document.getElementById('high-density-2d-side')
+            ];
+            
+            // Add depth markers for 2D model
+            grids2DSide.forEach(grid => {
+                // Surface depth marker (0 m)
+                const surfaceDepth = document.createElement('div');
+                surfaceDepth.className = 'depth-marker';
+                surfaceDepth.style.top = '10%';
+                surfaceDepth.textContent = '0 m';
+                grid.appendChild(surfaceDepth);
+                
+                // Middle depth marker (500 m)
+                const middleDepth = document.createElement('div');
+                middleDepth.className = 'depth-marker';
+                middleDepth.style.top = '45%';
+                middleDepth.textContent = '500 m';
+                grid.appendChild(middleDepth);
+                
+                // Reservoir depth marker (1000 m)
+                const reservoirDepth = document.createElement('div');
+                reservoirDepth.className = 'depth-marker';
+                reservoirDepth.style.top = '90%';
+                reservoirDepth.textContent = '1000 m';
+                grid.appendChild(reservoirDepth);
+                
+                // Add scale bar
+                const scaleBar = document.createElement('div');
+                scaleBar.className = 'scale-bar';
+                scaleBar.style.width = '50px';
+                scaleBar.style.left = 'calc(50% - 25px)';
+                grid.appendChild(scaleBar);
+                
+                // Add scale label
+                const scaleLabel = document.createElement('div');
+                scaleLabel.className = 'scale-label';
+                scaleLabel.style.width = '50px';
+                scaleLabel.style.left = 'calc(50% - 25px)';
+                scaleLabel.textContent = '1 km';
+                grid.appendChild(scaleLabel);
+            });
+            
+            // Add well in center for 2D model
+            grids2DSide.forEach(grid => {
+                // Center well at top
+                const wellTop = document.createElement('div');
+                wellTop.className = 'well';
+                wellTop.style.left = '50%';
+                wellTop.style.top = '20%'; // At the surface-middle layer boundary
+                grid.appendChild(wellTop);
+                
+                // Well line
+                const wellLine = document.createElement('div');
+                wellLine.className = 'well-line';
+                wellLine.style.top = '20%';
+                wellLine.style.height = '60%'; // Only down to the reservoir
+                grid.appendChild(wellLine);
+            });
+            
+            // Add monitoring points at the surface for 2D model
+            // Linear array - all points in a line
+            const linear2DSide = document.getElementById('linear-2d-side');
+            
+            // Add point count info above the center point
+            const linear2DPointInfo = document.createElement('div');
+            linear2DPointInfo.className = 'point-info';
+            linear2DPointInfo.textContent = '51 points';
+            linear2DPointInfo.style.left = '50%';
+            linear2DPointInfo.style.top = '15%'; // Above the points
+            linear2DSide.appendChild(linear2DPointInfo);
+            
+            for (let i = 0; i < 51; i++) {
+                const point = document.createElement('div');
+                point.className = 'point';
+                point.style.left = `${i * 100 / 50}%`;
+                point.style.top = '20%'; // At the surface-middle layer boundary
+                linear2DSide.appendChild(point);
+            }
+            
+            // Low-density grid
+            const lowDensity2DSide = document.getElementById('low-density-2d-side');
+            
+            // Add point count info above the center point
+            const lowDensity2DPointInfo = document.createElement('div');
+            lowDensity2DPointInfo.className = 'point-info';
+            lowDensity2DPointInfo.textContent = '36 points';
+            lowDensity2DPointInfo.style.left = '50%';
+            lowDensity2DPointInfo.style.top = '15%'; // Above the points
+            lowDensity2DSide.appendChild(lowDensity2DPointInfo);
+            
+            for (let i = 0; i < 6; i++) {
+                const point = document.createElement('div');
+                point.className = 'point';
+                point.style.left = `${i * 100 / 5}%`;
+                point.style.top = '20%'; // At the surface-middle layer boundary
+                lowDensity2DSide.appendChild(point);
+            }
+            
+            // High-density grid
+            const highDensity2DSide = document.getElementById('high-density-2d-side');
+            
+            // Add point count info above the center point
+            const highDensity2DPointInfo = document.createElement('div');
+            highDensity2DPointInfo.className = 'point-info';
+            highDensity2DPointInfo.textContent = '121 points';
+            highDensity2DPointInfo.style.left = '50%';
+            highDensity2DPointInfo.style.top = '15%'; // Above the points
+            highDensity2DSide.appendChild(highDensity2DPointInfo);
+            
+            for (let i = 0; i < 11; i++) {
+                const point = document.createElement('div');
+                point.className = 'point';
+                point.style.left = `${i * 100 / 10}%`;
+                point.style.top = '20%'; // At the surface-middle layer boundary
+                highDensity2DSide.appendChild(point);
+            }
+            
+            // Brugge model side view
+            const gridsBruggeSide = [
+                document.getElementById('linear-brugge-side'),
+                document.getElementById('low-density-brugge-side'),
+                document.getElementById('high-density-brugge-side')
+            ];
+            
+            // Add depth markers for Brugge model
+            gridsBruggeSide.forEach(grid => {
+                // Surface depth marker (0 m)
+                const surfaceDepth = document.createElement('div');
+                surfaceDepth.className = 'depth-marker';
+                surfaceDepth.style.top = '10%';
+                surfaceDepth.textContent = '0 m';
+                grid.appendChild(surfaceDepth);
+                
+                // Reservoir depth marker (1545-1945 m)
+                const reservoirDepth = document.createElement('div');
+                reservoirDepth.className = 'depth-marker';
+                reservoirDepth.style.top = '90%';
+                reservoirDepth.textContent = '1545-1945 m';
+                grid.appendChild(reservoirDepth);
+                
+                // Add scale bar
+                const scaleBar = document.createElement('div');
+                scaleBar.className = 'scale-bar';
+                scaleBar.style.width = '70px';
+                scaleBar.style.left = 'calc(50% - 35px)';
+                grid.appendChild(scaleBar);
+                
+                // Add scale label
+                const scaleLabel = document.createElement('div');
+                scaleLabel.className = 'scale-label';
+                scaleLabel.style.width = '70px';
+                scaleLabel.style.left = 'calc(50% - 35px)';
+                scaleLabel.textContent = '5 km';
+                grid.appendChild(scaleLabel);
+            });
+            
+            // Add well in specified position for Brugge model
+            gridsBruggeSide.forEach(grid => {
+                // Top well marker
+                const wellTop = document.createElement('div');
+                wellTop.className = 'well';
+                wellTop.style.left = '72%';
+                wellTop.style.top = '20%'; // At the surface-middle layer boundary
+                grid.appendChild(wellTop);
+                
+                // Well line
+                const wellLine = document.createElement('div');
+                wellLine.className = 'well-line';
+                wellLine.style.left = '72%';
+                wellLine.style.top = '20%';
+                wellLine.style.height = '60%'; // Only down to the reservoir
+                grid.appendChild(wellLine);
+            });
+            
+            // Add monitoring points at the surface for Brugge model
+            // Linear array - all points in a line
+            const linearBruggeSide = document.getElementById('linear-brugge-side');
+            
+            // Add point count info above the center point
+            const linearBruggePointInfo = document.createElement('div');
+            linearBruggePointInfo.className = 'point-info';
+            linearBruggePointInfo.textContent = '139 points';
+            linearBruggePointInfo.style.left = '50%';
+            linearBruggePointInfo.style.top = '15%'; // Above the points
+            linearBruggeSide.appendChild(linearBruggePointInfo);
+            
+            for (let i = 0; i < 139; i++) {
+                const point = document.createElement('div');
+                point.className = 'point';
+                point.style.left = `${i * 100 / 138}%`;
+                point.style.top = '20%'; // At the surface-middle layer boundary
+                linearBruggeSide.appendChild(point);
+            }
+            
+            // Low-density grid
+            const lowDensityBruggeSide = document.getElementById('low-density-brugge-side');
+            
+            // Add point count info above the center point
+            const lowDensityBruggePointInfo = document.createElement('div');
+            lowDensityBruggePointInfo.className = 'point-info';
+            lowDensityBruggePointInfo.textContent = '36 points';
+            lowDensityBruggePointInfo.style.left = '50%';
+            lowDensityBruggePointInfo.style.top = '15%'; // Above the points
+            lowDensityBruggeSide.appendChild(lowDensityBruggePointInfo);
+            
+            for (let i = 0; i < 6; i++) {
+                const point = document.createElement('div');
+                point.className = 'point';
+                point.style.left = `${i * 100 / 5}%`;
+                point.style.top = '20%'; // At the surface-middle layer boundary
+                lowDensityBruggeSide.appendChild(point);
+            }
+            
+            // High-density grid
+            const highDensityBruggeSide = document.getElementById('high-density-brugge-side');
+            
+            // Add point count info above the center point
+            const highDensityBruggePointInfo = document.createElement('div');
+            highDensityBruggePointInfo.className = 'point-info';
+            highDensityBruggePointInfo.textContent = '121 points';
+            highDensityBruggePointInfo.style.left = '50%';
+            highDensityBruggePointInfo.style.top = '15%'; // Above the points
+            highDensityBruggeSide.appendChild(highDensityBruggePointInfo);
+            
+            for (let i = 0; i < 11; i++) {
+                const point = document.createElement('div');
+                point.className = 'point';
+                point.style.left = `${i * 100 / 10}%`;
+                point.style.top = '20%'; // At the surface-middle layer boundary
+                highDensityBruggeSide.appendChild(point);
+            }
+        }
+        
+        // Top view setup
+        function setupTopView() {
+            // 2D model top view
+            // Linear array
+            const linear2DTop = document.getElementById('linear-2d-top');
+            // Add model dimensions info
+            const linear2DInfo = document.createElement('div');
+            linear2DInfo.className = 'grid-info';
+            linear2DInfo.innerHTML = '4 km × 4 km';
+            linear2DTop.appendChild(linear2DInfo);
+            
+            // Add point count info
+            const linear2DPointInfo = document.createElement('div');
+            linear2DPointInfo.className = 'point-info';
+            linear2DPointInfo.textContent = '51 points';
+            linear2DPointInfo.style.left = '50%';
+            linear2DPointInfo.style.top = '40%'; // Above the points
+            linear2DTop.appendChild(linear2DPointInfo);
+            
+            // Add scale bar
+            const linear2DScaleBar = document.createElement('div');
+            linear2DScaleBar.className = 'scale-bar';
+            linear2DScaleBar.style.width = '50px';
+            linear2DScaleBar.style.left = 'calc(50% - 25px)';
+            linear2DTop.appendChild(linear2DScaleBar);
+            
+            // Add scale label
+            const linear2DScaleLabel = document.createElement('div');
+            linear2DScaleLabel.className = 'scale-label';
+            linear2DScaleLabel.style.width = '50px';
+            linear2DScaleLabel.style.left = 'calc(50% - 25px)';
+            linear2DScaleLabel.textContent = '1 km';
+            linear2DTop.appendChild(linear2DScaleLabel);
+            
+            // Add well in center
+            const well2DLinear = document.createElement('div');
+            well2DLinear.className = 'well';
+            well2DLinear.style.left = '50%';
+            well2DLinear.style.top = '50%';
+            linear2DTop.appendChild(well2DLinear);
+            
+            // Add monitoring points
+            for (let i = 0; i < 51; i++) {
+                const point = document.createElement('div');
+                point.className = 'point';
+                point.style.left = `${i * 100 / 50}%`;
+                point.style.top = '50%';
+                linear2DTop.appendChild(point);
+            }
+            
+            // Low-density grid
+            const lowDensity2DTop = document.getElementById('low-density-2d-top');
+            // Add model dimensions info
+            const lowDensity2DInfo = document.createElement('div');
+            lowDensity2DInfo.className = 'grid-info';
+            lowDensity2DInfo.innerHTML = '~800 m spacing<br>4 km × 4 km';
+            lowDensity2DTop.appendChild(lowDensity2DInfo);
+            
+            // Add point count info
+            const lowDensity2DPointInfo = document.createElement('div');
+            lowDensity2DPointInfo.className = 'point-info';
+            lowDensity2DPointInfo.textContent = '36 points';
+            lowDensity2DPointInfo.style.left = '50%';
+            lowDensity2DPointInfo.style.top = '40%'; // Above the center
+            lowDensity2DTop.appendChild(lowDensity2DPointInfo);
+            
+            // Add scale bar
+            const lowDensity2DScaleBar = document.createElement('div');
+            lowDensity2DScaleBar.className = 'scale-bar';
+            lowDensity2DScaleBar.style.width = '50px';
+            lowDensity2DScaleBar.style.left = 'calc(50% - 25px)';
+            lowDensity2DTop.appendChild(lowDensity2DScaleBar);
+            
+            // Add scale label
+            const lowDensity2DScaleLabel = document.createElement('div');
+            lowDensity2DScaleLabel.className = 'scale-label';
+            lowDensity2DScaleLabel.style.width = '50px';
+            lowDensity2DScaleLabel.style.left = 'calc(50% - 25px)';
+            lowDensity2DScaleLabel.textContent = '1 km';
+            lowDensity2DTop.appendChild(lowDensity2DScaleLabel);
+            
+            // Add well in center
+            const well2DLow = document.createElement('div');
+            well2DLow.className = 'well';
+            well2DLow.style.left = '50%';
+            well2DLow.style.top = '50%';
+            lowDensity2DTop.appendChild(well2DLow);
+            
+            // Add monitoring points
+            for (let i = 0; i < 6; i++) {
+                for (let j = 0; j < 6; j++) {
+                    const point = document.createElement('div');
+                    point.className = 'point';
+                    point.style.left = `${i * 100 / 5}%`;
+                    point.style.top = `${j * 100 / 5}%`;
+                    lowDensity2DTop.appendChild(point);
+                }
+            }
+            
+            // High-density grid
+            const highDensity2DTop = document.getElementById('high-density-2d-top');
+            // Add model dimensions info
+            const highDensity2DInfo = document.createElement('div');
+            highDensity2DInfo.className = 'grid-info';
+            highDensity2DInfo.innerHTML = '~400 m spacing<br>4 km × 4 km';
+            highDensity2DTop.appendChild(highDensity2DInfo);
+            
+            // Add point count info
+            const highDensity2DPointInfo = document.createElement('div');
+            highDensity2DPointInfo.className = 'point-info';
+            highDensity2DPointInfo.textContent = '121 points';
+            highDensity2DPointInfo.style.left = '50%';
+            highDensity2DPointInfo.style.top = '40%'; // Above the center
+            highDensity2DTop.appendChild(highDensity2DPointInfo);
+            
+            // Add scale bar
+            const highDensity2DScaleBar = document.createElement('div');
+            highDensity2DScaleBar.className = 'scale-bar';
+            highDensity2DScaleBar.style.width = '50px';
+            highDensity2DScaleBar.style.left = 'calc(50% - 25px)';
+            highDensity2DTop.appendChild(highDensity2DScaleBar);
+            
+            // Add scale label
+            const highDensity2DScaleLabel = document.createElement('div');
+            highDensity2DScaleLabel.className = 'scale-label';
+            highDensity2DScaleLabel.style.width = '50px';
+            highDensity2DScaleLabel.style.left = 'calc(50% - 25px)';
+            highDensity2DScaleLabel.textContent = '1 km';
+            highDensity2DTop.appendChild(highDensity2DScaleLabel);
+            
+            // Add well in center
+            const well2DHigh = document.createElement('div');
+            well2DHigh.className = 'well';
+            well2DHigh.style.left = '50%';
+            well2DHigh.style.top = '50%';
+            highDensity2DTop.appendChild(well2DHigh);
+            
+            // Add monitoring points
+            for (let i = 0; i < 11; i++) {
+                for (let j = 0; j < 11; j++) {
+                    const point = document.createElement('div');
+                    point.className = 'point';
+                    point.style.left = `${i * 100 / 10}%`;
+                    point.style.top = `${j * 100 / 10}%`;
+                    highDensity2DTop.appendChild(point);
+                }
+            }
+            
+            // Brugge model top view
+            // Linear array
+            const linearBruggeTop = document.getElementById('linear-brugge-top');
+            // Add model dimensions info
+            const linearBruggeInfo = document.createElement('div');
+            linearBruggeInfo.className = 'grid-info';
+            linearBruggeInfo.innerHTML = '13.5 km × 7.5 km';
+            linearBruggeTop.appendChild(linearBruggeInfo);
+            
+            // Add point count info
+            const linearBruggePointInfo = document.createElement('div');
+            linearBruggePointInfo.className = 'point-info';
+            linearBruggePointInfo.textContent = '139 points';
+            linearBruggePointInfo.style.left = '50%';
+            linearBruggePointInfo.style.top = '40%'; // Above the center
+            linearBruggeTop.appendChild(linearBruggePointInfo);
+            
+            // Add scale bar
+            const linearBruggeScaleBar = document.createElement('div');
+            linearBruggeScaleBar.className = 'scale-bar';
+            linearBruggeScaleBar.style.width = '70px';
+            linearBruggeScaleBar.style.left = 'calc(50% - 35px)';
+            linearBruggeTop.appendChild(linearBruggeScaleBar);
+            
+            // Add scale label
+            const linearBruggeScaleLabel = document.createElement('div');
+            linearBruggeScaleLabel.className = 'scale-label';
+            linearBruggeScaleLabel.style.width = '70px';
+            linearBruggeScaleLabel.style.left = 'calc(50% - 35px)';
+            linearBruggeScaleLabel.textContent = '5 km';
+            linearBruggeTop.appendChild(linearBruggeScaleLabel);
+            
+            // Add well in specified position
+            const wellBruggeLinear = document.createElement('div');
+            wellBruggeLinear.className = 'well';
+            wellBruggeLinear.style.left = '72%';
+            wellBruggeLinear.style.top = '50%';
+            linearBruggeTop.appendChild(wellBruggeLinear);
+            
+            // Add monitoring points
+            for (let i = 0; i < 139; i++) {
+                const point = document.createElement('div');
+                point.className = 'point';
+                point.style.left = `${i * 100 / 138}%`;
+                point.style.top = '50%';
+                linearBruggeTop.appendChild(point);
+            }
+            
+            // Low-density grid
+            const lowDensityBruggeTop = document.getElementById('low-density-brugge-top');
+            // Add model dimensions info
+            const lowDensityBruggeInfo = document.createElement('div');
+            lowDensityBruggeInfo.className = 'grid-info';
+            lowDensityBruggeInfo.innerHTML = '~2.8 km spacing<br>13.5 km × 7.5 km';
+            lowDensityBruggeTop.appendChild(lowDensityBruggeInfo);
+            
+            // Add point count info
+            const lowDensityBruggePointInfo = document.createElement('div');
+            lowDensityBruggePointInfo.className = 'point-info';
+            lowDensityBruggePointInfo.textContent = '36 points';
+            lowDensityBruggePointInfo.style.left = '50%';
+            lowDensityBruggePointInfo.style.top = '40%'; // Above the center
+            lowDensityBruggeTop.appendChild(lowDensityBruggePointInfo);
+            
+            // Add scale bar
+            const lowDensityBruggeScaleBar = document.createElement('div');
+            lowDensityBruggeScaleBar.className = 'scale-bar';
+            lowDensityBruggeScaleBar.style.width = '70px';
+            lowDensityBruggeScaleBar.style.left = 'calc(50% - 35px)';
+            lowDensityBruggeTop.appendChild(lowDensityBruggeScaleBar);
+            
+            // Add scale label
+            const lowDensityBruggeScaleLabel = document.createElement('div');
+            lowDensityBruggeScaleLabel.className = 'scale-label';
+            lowDensityBruggeScaleLabel.style.width = '70px';
+            lowDensityBruggeScaleLabel.style.left = 'calc(50% - 35px)';
+            lowDensityBruggeScaleLabel.textContent = '5 km';
+            lowDensityBruggeTop.appendChild(lowDensityBruggeScaleLabel);
+            
+            // Add well in specified position
+            const wellBruggeLow = document.createElement('div');
+            wellBruggeLow.className = 'well';
+            wellBruggeLow.style.left = '72%';
+            wellBruggeLow.style.top = '50%';
+            lowDensityBruggeTop.appendChild(wellBruggeLow);
+            
+            // Add monitoring points
+            for (let i = 0; i < 6; i++) {
+                for (let j = 0; j < 6; j++) {
+                    const point = document.createElement('div');
+                    point.className = 'point';
+                    point.style.left = `${i * 100 / 5}%`;
+                    point.style.top = `${j * 100 / 5}%`;
+                    lowDensityBruggeTop.appendChild(point);
+                }
+            }
+            
+            // High-density grid
+            const highDensityBruggeTop = document.getElementById('high-density-brugge-top');
+            // Add model dimensions info
+            const highDensityBruggeInfo = document.createElement('div');
+            highDensityBruggeInfo.className = 'grid-info';
+            highDensityBruggeInfo.innerHTML = '~1.5 km spacing<br>13.5 km × 7.5 km';
+            highDensityBruggeTop.appendChild(highDensityBruggeInfo);
+            
+            // Add point count info
+            const highDensityBruggePointInfo = document.createElement('div');
+            highDensityBruggePointInfo.className = 'point-info';
+            highDensityBruggePointInfo.textContent = '121 points';
+            highDensityBruggePointInfo.style.left = '50%';
+            highDensityBruggePointInfo.style.top = '40%'; // Above the center
+            highDensityBruggeTop.appendChild(highDensityBruggePointInfo);
+            
+            // Add scale bar
+            const highDensityBruggeScaleBar = document.createElement('div');
+            highDensityBruggeScaleBar.className = 'scale-bar';
+            highDensityBruggeScaleBar.style.width = '70px';
+            highDensityBruggeScaleBar.style.left = 'calc(50% - 35px)';
+            highDensityBruggeTop.appendChild(highDensityBruggeScaleBar);
+            
+            // Add scale label
+            const highDensityBruggeScaleLabel = document.createElement('div');
+            highDensityBruggeScaleLabel.className = 'scale-label';
+            highDensityBruggeScaleLabel.style.width = '70px';
+            highDensityBruggeScaleLabel.style.left = 'calc(50% - 35px)';
+            highDensityBruggeScaleLabel.textContent = '5 km';
+            highDensityBruggeTop.appendChild(highDensityBruggeScaleLabel);
+            
+            // Add well in specified position
+            const wellBruggeHigh = document.createElement('div');
+            wellBruggeHigh.className = 'well';
+            wellBruggeHigh.style.left = '72%';
+            wellBruggeHigh.style.top = '50%';
+            highDensityBruggeTop.appendChild(wellBruggeHigh);
+            
+            // Add monitoring points
+            for (let i = 0; i < 11; i++) {
+                for (let j = 0; j < 11; j++) {
+                    const point = document.createElement('div');
+                    point.className = 'point';
+                    point.style.left = `${i * 100 / 10}%`;
+                    point.style.top = `${j * 100 / 10}%`;
+                    highDensityBruggeTop.appendChild(point);
+                }
+            }
+        }
+        
+        // Download functionality
+        function setupDownloadButtons() {
+            // PNG download for side view
+            document.getElementById('download-side').addEventListener('click', function() {
+                html2canvas(document.getElementById('capture-side')).then(function(canvas) {
+                    canvas.toBlob(function(blob) {
+                        saveAs(blob, 'monitoring-configurations-side-view.png');
+                    });
+                });
+            });
+            
+            // PNG download for top view
+            document.getElementById('download-top').addEventListener('click', function() {
+                html2canvas(document.getElementById('capture-top')).then(function(canvas) {
+                    canvas.toBlob(function(blob) {
+                        saveAs(blob, 'monitoring-configurations-top-view.png');
+                    });
+                });
+            });
+            
+            // SVG download for side view
+            document.getElementById('download-side-svg').addEventListener('click', function() {
+                // Create SVG
+                const draw = SVG().size(900, 650);
+                
+                // Clone the side view content to SVG
+                const sideView = document.getElementById('capture-side');
+                const sideViewSVG = createSVGFromHTML(draw, sideView);
+                
+                // Download SVG
+                const svgData = draw.svg();
+                const blob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                saveAs(blob, 'monitoring-configurations-side-view.svg');
+            });
+            
+            // SVG download for top view
+            document.getElementById('download-top-svg').addEventListener('click', function() {
+                // Create SVG
+                const draw = SVG().size(900, 650);
+                
+                // Clone the top view content to SVG
+                const topView = document.getElementById('capture-top');
+                const topViewSVG = createSVGFromHTML(draw, topView);
+                
+                // Download SVG
+                const svgData = draw.svg();
+                const blob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+                saveAs(blob, 'monitoring-configurations-top-view.svg');
+            });
+        }
+        
+        // Helper function to create SVG from HTML
+        function createSVGFromHTML(draw, element) {
+            // This is a simplified version - in a real implementation,
+            // you would need to recursively convert all HTML elements to SVG
+            
+            // Add title
+            draw.text(element.querySelector('.title').textContent)
+                .font({ family: 'Times New Roman', size: 16, weight: 'bold' })
+                .move(450, 20)
+                .center(450, 20);
+            
+            // Add basic shapes for each grid
+            const grids = element.querySelectorAll('.grid-2d-side, .grid-brugge-side, .grid-2d-top, .grid-brugge-top');
+            let yOffset = 80;
+            
+            grids.forEach((grid, index) => {
+                const width = grid.classList.contains('grid-2d-side') || grid.classList.contains('grid-2d-top') ? 300 : 400;
+                const height = grid.classList.contains('grid-2d-side') || grid.classList.contains('grid-2d-top') ? 300 : 220;
+                const xPos = (index % 3) * (width + 20) + 50;
+                
+                if (index % 3 === 0 && index > 0) {
+                    yOffset += height + 80;
+                }
+                
+                // Draw grid background
+                draw.rect(width, height)
+                    .fill('#e6e6e6')
+                    .stroke({ color: '#555', width: 1 })
+                    .move(xPos, yOffset);
+                
+                // If it's a side view, add layers
+                if (grid.classList.contains('grid-2d-side') || grid.classList.contains('grid-brugge-side')) {
+                    // Surface layer
+                    draw.rect(width, height * 0.2)
+                        .fill('#d4e6f1')
+                        .stroke({ color: '#3a7ca5', width: 1, dasharray: '5,5' })
+                        .move(xPos, yOffset);
+                    
+                    // Middle layer
+                    draw.rect(width, height * 0.6)
+                        .fill('#d5dbdb')
+                        .stroke({ color: '#7f8c8d', width: 1, dasharray: '5,5' })
+                        .move(xPos, yOffset + height * 0.2);
+                    
+                    // Reservoir layer
+                    draw.rect(width, height * 0.2)
+                        .fill('#fdebd0')
+                        .move(xPos, yOffset + height * 0.8);
+                }
+                
+                // Add title for each grid
+                const configTitle = element.querySelectorAll('.config-title')[index % 3].textContent;
+                draw.text(configTitle)
+                    .font({ family: 'Times New Roman', size: 16, weight: 'bold' })
+                    .move(xPos + width/2, yOffset - 20)
+                    .center(xPos + width/2, yOffset - 20);
+                
+                // Add well
+                const wellX = grid.classList.contains('grid-brugge-side') || grid.classList.contains('grid-brugge-top') ? 
+                    xPos + width * 0.72 : xPos + width * 0.5;
+                const wellY = grid.classList.contains('grid-2d-top') || grid.classList.contains('grid-brugge-top') ? 
+                    yOffset + height * 0.5 : yOffset + height * 0.2;
+                
+                draw.circle(10)
+                    .fill('black')
+                    .move(wellX - 5, wellY - 5);
+                
+                // Add well line for side views
+                if (grid.classList.contains('grid-2d-side') || grid.classList.contains('grid-brugge-side')) {
+                    draw.line(wellX, wellY, wellX, yOffset + height * 0.8)
+                        .stroke({ color: 'black', width: 2 });
+                }
+                
+                // Add monitoring points (simplified - just a few representative points)
+                if (grid.classList.contains('grid-2d-side') || grid.classList.contains('grid-brugge-side')) {
+                    // For side view - points along the top
+                    for (let i = 0; i < (index % 3 === 0 ? 10 : index % 3 === 1 ? 6 : 11); i++) {
+                        const pointX = xPos + width * (i / (index % 3 === 0 ? 9 : index % 3 === 1 ? 5 : 10));
+                        draw.circle(8)
+                            .fill('red')
+                            .move(pointX - 4, wellY - 4);
+                    }
+                } else {
+                    // For top view - grid or line pattern
+                    if (index % 3 === 0) {
+                        // Linear array
+                        for (let i = 0; i < 10; i++) {
+                            const pointX = xPos + width * (i / 9);
+                            draw.circle(8)
+                                .fill('red')
+                                .move(pointX - 4, yOffset + height/2 - 4);
+                        }
+                    } else if (index % 3 === 1) {
+                        // Low-density grid
+                        for (let i = 0; i < 6; i++) {
+                            for (let j = 0; j < 6; j++) {
+                                const pointX = xPos + width * (i / 5);
+                                const pointY = yOffset + height * (j / 5);
+                                draw.circle(8)
+                                    .fill('red')
+                                    .move(pointX - 4, pointY - 4);
+                            }
+                        }
+                    } else {
+                        // High-density grid
+                        for (let i = 0; i < 11; i += 2) {
+                            for (let j = 0; j < 11; j += 2) {
+                                const pointX = xPos + width * (i / 10);
+                                const pointY = yOffset + height * (j / 10);
+                                draw.circle(8)
+                                    .fill('red')
+                                    .move(pointX - 4, pointY - 4);
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Add legend
+            const legendY = yOffset + 350;
+            draw.text('Monitoring Point')
+                .font({ family: 'Times New Roman', size: 14 })
+                .move(400, legendY);
+            draw.circle(8)
+                .fill('red')
+                .move(380, legendY);
+            
+            draw.text('Injection Well')
+                .font({ family: 'Times New Roman', size: 14 })
+                .move(550, legendY);
+            draw.circle(10)
+                .fill('black')
+                .move(530, legendY);
+            
+            return draw;
+        }
+        
+        // Initialize everything when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default tab to open
+            document.getElementById('defaultOpen').click();
+            
+            // Setup views
+            setupSideView();
+            setupTopView();
+            
+            // Setup download buttons
+            setupDownloadButtons();
+        });
+    </script>
+</body>
+</html>

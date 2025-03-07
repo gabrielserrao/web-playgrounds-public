@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Leveraging Diffusion Posterior Sampling for Data Assimilation in Geological Carbon Storage</title>
+  <!-- MathJax for LaTeX rendering -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      line-height: 1.6;
+    }
+    .container {
+      width: 95%;
+      max-width: 1200px;
+      margin: 30px auto;
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1, h2, h3 {
+      color: #2c3e50;
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
+    }
+    h1 {
+      text-align: center;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    h2 {
+      border-left: 4px solid #3498db;
+      padding-left: 10px;
+    }
+    .equation {
+      background-color: #f8f9fa;
+      padding: 15px;
+      margin: 20px 0;
+      border-left: 4px solid #3498db;
+      font-size: 1.1em;
+      overflow-x: auto;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    pre, code {
+      background-color: #272822;
+      color: #f8f8f2;
+      font-family: Consolas, monospace;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .python-code {
+      background-color: #272822;
+      color: #f8f8f2;
+      font-family: 'Courier New', Consolas, monospace;
+      padding: 20px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 30px 0;
+      line-height: 1.6;
+      font-size: 14px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      border: 1px solid #444;
+    }
+    .python-code .keyword { color: #f92672; font-weight: bold; }
+    .python-code .function { color: #a6e22e; }
+    .python-code .string { color: #e6db74; }
+    .python-code .number { color: #ae81ff; }
+    .python-code .comment { color: #75715e; font-style: italic; }
+    img {
+      display: block;
+      margin: 20px auto;
+      max-width: 90%;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    hr {
+      margin: 30px 0;
+      border: none;
+      border-top: 2px solid #ecf0f1;
+    }
+    .figure-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 25px 0;
+      flex-wrap: wrap;
+    }
+    .figure-item {
+      flex: 1;
+      min-width: 300px;
+      margin: 10px;
+      text-align: center;
+    }
+    .figure-caption {
+      font-style: italic;
+      margin-top: 8px;
+      color: #7f8c8d;
+    }
+    .abstract {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-left: 4px solid #2ecc71;
+      margin: 20px 0;
+      font-style: italic;
+    }
+    .key-point {
+      background-color: #e8f4fc;
+      padding: 10px 15px;
+      border-radius: 4px;
+      margin: 15px 0;
+      border-left: 4px solid #3498db;
+    }
+    .authors {
+      text-align: center;
+      margin: 15px 0 25px 0;
+      font-size: 1.1em;
+    }
+    .authors .name {
+      font-weight: bold;
+      color: #2980b9;
+    }
+    .affiliations {
+      text-align: center;
+      font-size: 0.9em;
+      margin-bottom: 25px;
+      color: #555;
+    }
+    .algorithm {
+      background-color: #f8f9fa;
+      padding: 15px;
+      margin: 20px 0;
+      border-left: 4px solid #e74c3c;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .two-column {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin: 20px 0;
+    }
+    .column {
+      flex: 1;
+      min-width: 300px;
+    }
+    .history-matching {
+      display: flex;
+      justify-content: center;
+      margin: 25px 0;
+      flex-wrap: wrap;
+    }
+    .history-matching img {
+      max-width: 100%;
+      height: auto;
+    }
+    .code-block {
+      background-color: #272822;
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin: 20px 0;
+      position: relative;
+    }
+    .code-title {
+      position: absolute;
+      top: -12px;
+      left: 15px;
+      background-color: #e74c3c;
+      color: white;
+      padding: 2px 10px;
+      font-size: 12px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Leveraging Diffusion Posterior Sampling for Data Assimilation in Geological Carbon Storage</h1>
+  
+  <div class="authors">
+    <span class="name">Gabriel Serrão Seabra</span><sup>1,2</sup>, <span class="name">Nikolaj T. Mücke</span><sup>3,4</sup>, <span class="name">Vinicius Luiz Santos Silva</span><sup>2,5</sup>, <span class="name">Denis Voskov</span><sup>1,6</sup>, <span class="name">Femke Vossepoel</span><sup>1</sup>
+  </div>
+  
+  <div class="affiliations">
+    <sup>1</sup>Faculty of Civil Engineering and Geosciences, TU Delft, Netherlands<br>
+    <sup>2</sup>Petroleo Brasileiro S.A. (Petrobras), Brazil<br>
+    <sup>3</sup>Centrum Wiskunde & Informatica, Netherlands<br>
+    <sup>4</sup>Mathematical Institute, Utrecht University, Netherlands<br>
+    <sup>5</sup>Department of Earth Science and Engineering, Imperial College London, UK<br>
+    <sup>6</sup>Department of Energy Resources Engineering, Stanford University, USA
+  </div>
+
+  <div class="abstract">
+    <strong>Abstract:</strong> Accurate characterization of subsurface reservoirs is critical for successful geological carbon storage (GCS) projects. This study investigates an approach for uncertainty quantification and history matching in GCS through the integration of score-based diffusion models with ensemble-based data assimilation methods. We introduce a methodology that leverages the noise space of score-based diffusion models to perform data assimilation on channelized reservoir models. By operating in the noise space rather than directly on permeability fields, our approach maintains geological realism while effectively integrating observational data with numerical models. Our method shows particular promise for pressure management in GCS projects, where accurate characterization of reservoir heterogeneity is essential for predicting pressure buildup and associated risks such as induced seismicity and caprock integrity.
+  </div>
+
+  <h2>1. Introduction</h2>
+  <div class="two-column">
+    <div class="column">
+      <p>
+        Geological Carbon Storage (GCS) represents a critical technology for mitigating climate change by reducing atmospheric CO₂ concentrations. The process involves capturing CO₂ from industrial sources and injecting it into deep geological formations for long-term storage. The success of GCS projects depends significantly on accurate characterization of subsurface reservoirs to ensure effective storage capacity, containment security, and risk management.
+      </p>
+      <p>
+        A particular challenge in GCS projects is effective pressure management. Improper handling of injection-induced pressure can lead to significant risks, including:
+      </p>
+      <ul>
+        <li>Induced seismicity ranging from microseismicity to significant earthquakes</li>
+        <li>Compromised caprock integrity when injection pressures exceed mechanical stability thresholds</li>
+        <li>Mechanical failures that jeopardize containment security</li>
+      </ul>
+      <p>
+        Traditional methods for reservoir characterization often struggle to capture the inherent complexity and connectivity patterns of subsurface formations, leading to inaccurate predictions of CO₂ plume migration and pressure evolution.
+      </p>
+    </div>
+    <div class="column">
+      <div class="key-point">
+        <strong>Key Challenge:</strong> How can we maintain geological realism while ensuring that our reservoir models match observed data (bottom-hole pressures)?
+      </div>
+      <p>
+        We propose a data assimilation framework that integrates score-based diffusion models with ES-MDA. The diffusion model is trained to represent the probability distribution of reservoir properties via a continuous noising–denoising process, and ES-MDA is used to update the latent noise variables that parameterize the model state.
+      </p>
+      <div class="figure-container">
+        <div class="figure-item">
+          <img src="workflow.png" alt="Complete Workflow Diagram" style="max-width: 100%; height: auto;"/>
+          <div class="figure-caption">Figure 1: High-level overview of the workflow integrating diffusion models with ES-MDA for geological carbon storage</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>2. Score-Based Diffusion Models</h2>
+  
+  <div class="key-point">
+    <strong>Core Concept:</strong> Score-based diffusion models progressively corrupt training data with noise and learn to reverse this process, allowing us to generate new, realistic reservoir fields.
+  </div>
+  
+  <h3>2.1 Forward Process: Data → Noise</h3>
+  <p>
+    The forward process gradually adds noise to a clean permeability field until it becomes pure Gaussian noise. This is modeled as a stochastic differential equation (SDE):
+  </p>
+  <div class="equation">
+    \( \displaystyle \mathrm{d}\mathbf{x} = \sqrt{\frac{\mathrm{d}[\sigma^2(t)]}{\mathrm{d}t}}\, \mathrm{d}\mathbf{w} \quad \text{(Eq. 2.1)} \)
+  </div>
+  <p>
+    For our implementation, we use the Variance Exploding (VE) SDE formulation with \(\sigma(t)\) controlling the noise level at time \(t\). We define \(\sigma(t)\) as:
+  </p>
+  <div class="equation">
+    \( \displaystyle \sigma(t) = \sqrt{\frac{\sigma^{2t} - 1}{2\ln\sigma}} \quad \text{(Eq. 2.2)} \)
+  </div>
+  <p>
+    For discrete timesteps, the perturbed state is given by:
+  </p>
+  <div class="equation">
+    \( \displaystyle \mathbf{x}_t = \mathbf{x}_0 + \sigma(t)\,\boldsymbol{\epsilon}, \quad \boldsymbol{\epsilon} \sim \mathcal{N}(0,\mathbf{I}) \quad \text{(Eq. 2.3)} \)
+  </div>
+  
+  <div class="figure-container">
+    <div class="figure-item">
+      <img src="foward-backward.png" alt="Forward and Reverse SDE Process" style="max-width: 100%; height: auto;"/>
+      <div class="figure-caption">Figure 2: Illustration of the forward SDE (data → noise) and reverse SDE (noise → data) processes</div>
+    </div>
+  </div>
+  
+  <div class="figure-container">
+    <div class="figure-item">
+      <img src="noise_perturbations.png" alt="Noise Perturbation Analysis" style="max-width: 100%; height: auto;"/>
+      <div class="figure-caption">Figure 3: Detailed analysis of noise perturbations and their effects on the resulting permeability fields</div>
+    </div>
+  </div>
+
+  <h3>2.2 Score Function and Neural Network Training</h3>
+  <p>
+    The score function is defined as the gradient of the log probability density:
+  </p>
+  <div class="equation">
+    \( \displaystyle \nabla_{\mathbf{x}} \log p_t(\mathbf{x}) \quad \text{(Eq. 2.4)} \)
+  </div>
+  <p>
+    For the diffusion process, the score function is related to the noise added during the forward process:
+  </p>
+  <div class="equation">
+    \( \displaystyle \nabla_{\mathbf{x}} \log p_t(\mathbf{x}) = -\frac{\boldsymbol{\epsilon}}{\sigma(t)} \quad \text{(Eq. 2.5)} \)
+  </div>
+  <p>
+    A neural network \( s_\theta(\mathbf{x}_t,t) \) is trained to approximate this score function by minimizing the denoising score matching loss:
+  </p>
+  <div class="equation">
+    \( \displaystyle \mathcal{L}(\theta) = \mathbb{E}_{t,\mathbf{x}_0,\boldsymbol{\epsilon}}\left[\left\| s_\theta(\mathbf{x}_t,t) + \frac{\boldsymbol{\epsilon}}{\sigma(t)} \right\|^2 \right] \quad \text{(Eq. 2.6)} \)
+  </div>
+  
+  <div class="algorithm">
+    <strong>Algorithm 1: Training Score-Based Diffusion Models</strong>
+    <pre><code>Input: Training data {x^(i)}_{i=1}^N, noise schedule σ(t), number of epochs E
+Output: Trained score-based model s_θ(x, t)
+
+Initialize model parameters θ
+for epoch = 1 to E do
+    for each batch {x_0^(j)}_{j=1}^B from training data do
+        Sample times t^(j) ~ Uniform(0, 1)
+        Sample noise ε^(j) ~ N(0, I)
+        Compute perturbed data x_t^(j) = x_0^(j) + σ(t^(j))ε^(j)
+        Compute loss L(θ) = (1/B)∑_{j=1}^B||s_θ(x_t^(j), t^(j)) + ε^(j)/σ(t^(j))||²
+        Update parameters θ using gradient descent
+    end for
+    Periodically generate and evaluate samples
+end for</code></pre>
+  </div>
+
+  <h3>2.3 Reverse Process: Noise → Data</h3>
+  <p>
+    Once trained, the network can reverse the diffusion process, generating new permeability fields from random noise. Two approaches for this reverse process are:
+  </p>
+  
+  <h4>2.3.1 SDE-based Reverse Process (PC Sampling)</h4>
+  <div class="equation">
+    \( \displaystyle \mathrm{d}\mathbf{x} = \left[ -\frac{1}{2}g(t)^2 \nabla_{\mathbf{x}} \log p_t(\mathbf{x}) \right] \mathrm{d}t + g(t)\,\mathrm{d}\bar{\mathbf{w}} \quad \text{(Eq. 2.7)} \)
+  </div>
+  
+  <div class="algorithm">
+    <strong>Algorithm 2: Predictor-Corrector Sampling</strong>
+    <pre><code>Input: Score model s_θ(x, t), noise schedule σ(t), number of steps N, SNR parameter r
+Output: Sample x_0
+
+Initialize x_N ~ N(0, σ(T)²I)
+for i = N-1 to 0 do
+    # Predictor step (Euler-Maruyama)
+    g = g(i/N)
+    x_i = x_{i+1} + g² s_θ(x_{i+1}, (i+1)/N) · (1/N) + g√(1/N) · z, where z ~ N(0, I)
+    
+    # Corrector step (Langevin MCMC)
+    for j = 1 to M do
+        z ~ N(0, I)
+        grad = s_θ(x_i, i/N)
+        η = 2(r ||z||₂ / ||grad||₂)² # Adaptive step size
+        x_i = x_i + η · grad + √(2η) · z
+    end for
+end for
+Return x_0</code></pre>
+  </div>
+  
+  <h4>2.3.2 ODE-based Reverse Process</h4>
+  <div class="equation">
+    \( \displaystyle \frac{\mathrm{d}\mathbf{x}}{\mathrm{d}t} = -\frac{1}{2}g(t)^2 \nabla_{\mathbf{x}} \log p_t(\mathbf{x}) \quad \text{(Eq. 2.8)} \)
+  </div>
+  
+  <div class="algorithm">
+    <strong>Algorithm 3: ODE-Based Sampling</strong>
+    <pre><code>Input: Score model s_θ(x, t), noise schedule σ(t), number of steps N
+Output: Sample x_0
+
+Initialize x_N ~ N(0, σ(T)²I)
+Define ODE function f(t, x) = -0.5 g(t)² s_θ(x, t)
+Solve ODE from t=T to t=0 using numerical integration:
+  • t_vec = linspace(T, 0, N)
+  • x_0 = ODE_Solver(f, x_N, t_vec)
+Return x_0</code></pre>
+  </div>
+  
+  <div class="code-block">
+    <div class="code-title">PyTorch Implementation</div>
+    <pre style="margin: 0; line-height: 1.5;"><code style="color: #f8f8f2; display: block; padding: 10px;">
+<span style="color: #75715e; font-style: italic;"># Example implementation of PC sampler</span>
+<span style="color: #f92672; font-weight: bold;">def</span> <span style="color: #a6e22e;">pc_sampler</span>(score_model, marginal_prob_std, diffusion_coeff, 
+              batch_size=<span style="color: #ae81ff;">64</span>, num_steps=<span style="color: #ae81ff;">500</span>, 
+              snr=<span style="color: #ae81ff;">0.16</span>, device=<span style="color: #e6db74;">'cuda'</span>):
+    
+    t = torch.ones(batch_size, device=device)
+    
+    <span style="color: #75715e; font-style: italic;"># Initialize with Gaussian noise</span>
+    x = torch.randn(batch_size, in_channels, imsize, imsize, device=device) \
+        * marginal_prob_std(t)[:, <span style="color: #f92672;">None</span>, <span style="color: #f92672;">None</span>, <span style="color: #f92672;">None</span>]
+    
+    time_steps = torch.linspace(<span style="color: #ae81ff;">1.</span>, <span style="color: #ae81ff;">1e-3</span>, num_steps)
+    step_size = time_steps[<span style="color: #ae81ff;">0</span>] - time_steps[<span style="color: #ae81ff;">1</span>]
+
+    <span style="color: #f92672; font-weight: bold;">for</span> time_step <span style="color: #f92672; font-weight: bold;">in</span> time_steps:
+        <span style="color: #75715e; font-style: italic;"># Corrector: Langevin MCMC</span>
+        grad = score_model(x, time_step.repeat(batch_size))
+        grad_norm = torch.norm(grad.view(grad.shape[<span style="color: #ae81ff;">0</span>], -<span style="color: #ae81ff;">1</span>), dim=-<span style="color: #ae81ff;">1</span>).mean()
+        noise_norm = np.sqrt(np.prod(x.shape[<span style="color: #ae81ff;">1</span>:]))
+        langevin_step_size = <span style="color: #ae81ff;">2</span> * (snr * noise_norm / grad_norm)**<span style="color: #ae81ff;">2</span>
+        
+        x = x + langevin_step_size * grad + \
+            torch.sqrt(<span style="color: #ae81ff;">2</span> * langevin_step_size) * torch.randn_like(x)
+
+        <span style="color: #75715e; font-style: italic;"># Predictor: Euler-Maruyama</span>
+        g = diffusion_coeff(time_step, sigma=<span style="color: #ae81ff;">25.0</span>)
+        x_mean = x + (g**<span style="color: #ae81ff;">2</span>)[:, <span style="color: #f92672;">None</span>, <span style="color: #f92672;">None</span>, <span style="color: #f92672;">None</span>] * \
+                score_model(x, time_step.repeat(batch_size)) * step_size
+                
+        x = x_mean + torch.sqrt(g**<span style="color: #ae81ff;">2</span> * step_size)[:, <span style="color: #f92672;">None</span>, <span style="color: #f92672;">None</span>, <span style="color: #f92672;">None</span>] * \
+            torch.randn_like(x)
+
+    <span style="color: #f92672; font-weight: bold;">return</span> x_mean</code></pre>
+  </div>
+
+  <h2>3. Data Assimilation with ES-MDA</h2>
+  
+  <div class="key-point">
+    <strong>Novel Approach:</strong> Instead of directly updating permeability fields, we update the noise vectors that, when passed through the diffusion model, generate permeability fields matching observed data. This allows us to maintain geological realism while incorporating measurement data.
+  </div>
+  
+  <p>
+    Data assimilation techniques provide a systematic approach to integrate observational data with numerical models to improve predictions and quantify uncertainties. In the context of GCS, data assimilation methods can incorporate monitoring data such as pressure measurements, seismic surveys, and tracer tests to update and refine reservoir models.
+  </p>
+  
+  <p>
+    Ensemble-based methods, including Ensemble Kalman Filters (EnKF) and Ensemble Smoothers with Multiple Data Assimilation (ES-MDA), have gained popularity in subsurface applications due to their ability to handle nonlinear systems and computational efficiency. However, these methods typically rely on Gaussian assumptions that may not adequately represent the complex, multimodal distributions characterizing channelized reservoirs.
+  </p>
+  
+  <p>
+    Once we have a generative model that can map noise \(\rightarrow\) permeability, we incorporate it into an Ensemble Smoother with Multiple Data Assimilation (ES-MDA) framework. The key idea is to treat the <em>noise</em> as our uncertain parameter. ES-MDA iteratively updates the noise vectors to match observed data (e.g., bottom-hole pressures).
+  </p>
+  
+  <h3>3.1 Forward Operator</h3>
+  <p>
+    Let \(z\) denote the noise vector. We define a forward operator:
+  </p>
+  <div class="equation">
+    \( \displaystyle G(z) \;=\; \underbrace{\text{Simulator}\bigl(\,\underbrace{\text{DiffusionModel}(z)}_{\text{permeability}}\bigr)}_{\text{observations}}. \)
+  </div>
+  
+  <h3>3.2 ES-MDA Update Equation</h3>
+  <p>
+    ES-MDA uses multiple assimilation steps with inflation factors \(\alpha_i\) to update the ensemble of noise vectors:
+  </p>
+  <div class="equation">
+    \( \displaystyle z_j^{(i+1)} \;=\; z_j^{(i)} \;+\; C_{zd}^{(i)} \,\bigl(C_{dd}^{(i)} + \alpha_i\,C_D\bigr)^{-1}\,\bigl(d_{\text{obs}} + \sqrt{\alpha_i}\,e_j^{(i)} - d_j^{(i)}\bigr). \)
+  </div>
+  <p>
+    Here:
+  </p>
+  <ul>
+    <li>\(z_j^{(i)}\) is the noise for ensemble member \(j\) at iteration \(i\)</li>
+    <li>\(d_j^{(i)} = G(z_j^{(i)})\) is the simulated data</li>
+    <li>\(d_{\text{obs}}\) are the real observations</li>
+    <li>\(C_{zd}\) and \(C_{dd}\) are cross-covariance and auto-covariance matrices</li>
+  </ul>
+  
+  <div class="figure-container">
+    <div class="figure-item">
+      <img src="histogram.png" alt="Noise Distribution Evolution" style="max-width: 100%; height: auto;"/>
+      <div class="figure-caption">Figure 4: Evolution of noise distribution through ES-MDA steps showing how the noise converges toward the target distribution</div>
+    </div>
+  </div>
+
+  <h2>4. Results and Comparison</h2>
+  <p>
+    Our approach ensures that the updated noise vectors, when passed back into the diffusion model, yield permeability fields that match the observed data while preserving geological realism. The following comparison demonstrates the advantage of using diffusion models in the ES-MDA framework.
+  </p>
+  
+  <div class="figure-container">
+    <div class="figure-item">
+      <img src="diffusion_vs_esmda.png" alt="Diffusion vs No-Diffusion Comparison" style="max-width: 100%; height: auto;"/>
+      <div class="figure-caption">Figure 5: Comparison of posterior samples with and without diffusion in the ES-MDA process. The diffusion-based approach (left) better preserves geological features compared to direct ES-MDA (right).</div>
+    </div>
+  </div>
+  
+  <div class="history-matching">
+    <img src="history_matching.png" alt="History Matching Results" style="max-width: 100%; height: auto;"/>
+  </div>
+  <div class="figure-caption" style="text-align: center; margin-top: -10px;">
+    Figure 6: History matching results showing posterior ensemble pressure data compared to observations at two well locations. The method successfully reduces uncertainty (gray lines) while matching observed data (blue dots).
+  </div>
+  
+  <div class="key-point">
+    <strong>Key Results:</strong>
+    <ul>
+      <li>The diffusion-based approach maintains geological realism, preserving channel connectivity</li>
+      <li>Traditional ES-MDA often produces unrealistic features, while our approach preserves the natural structure</li>
+      <li>Both methods match observed data, but our approach yields more realistic uncertainty quantification</li>
+      <li>Improved prediction of pressure propagation, critical for assessing induced seismicity risks</li>
+      <li>Better characterization of preferential flow paths for monitoring CO₂ plume migration</li>
+    </ul>
+  </div>
+
+  <h2>5. Conclusion</h2>
+  <p>
+    In summary, we introduced a novel integration of score-based diffusion models with ES-MDA for data assimilation in geological carbon storage. Our approach was developed by <span class="name">Gabriel Serrão Seabra</span>, <span class="name">Nikolaj Mücke</span>, and <span class="name">Femke Vossepoel</span>, along with their colleagues. The methodology:
+  </p>
+  <ul>
+    <li>Leverages the <em>forward SDE</em> to model the corruption of data and the <em>score function</em> to learn the reverse process</li>
+    <li>Employs two sampling methods (<strong>PC</strong> and <strong>ODE-based</strong>) to generate realistic permeability fields</li>
+    <li>Integrates with <strong>ES-MDA</strong> by updating noise variables rather than permeability fields directly</li>
+    <li>Demonstrates improved geological realism while matching observed data</li>
+    <li>Provides more reliable predictions for pressure management and risk assessment in GCS projects</li>
+  </ul>
+  
+  <p>
+    This methodology shows great promise for uncertainty quantification and decision-making in geological carbon storage applications, offering a more realistic representation of subsurface uncertainty. The approach can be extended to other geological systems beyond carbon storage, contributing to broader energy transition applications.
+  </p>
+
+</div>
+</body>
+</html>
